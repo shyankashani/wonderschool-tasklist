@@ -1,68 +1,97 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Wonderschool Task List
 
-## Available Scripts
+## 1. React Task List
 
-In the project directory, you can run:
+### `npm install`
+
+Installs dependencies.
 
 ### `npm start`
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Starts the app in development mode at [http://localhost:3000](http://localhost:3000).
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
 
-### `npm test`
+#### Tools used:
+- `react-router` to enable displaying of task groups by params.
+- `immutability-helper` to assist with immutability in React state.
+- `moment` to generate timestamps for tasks' `completed_at`.
+- `lodash` for a few utility functions.
+- `bootstrap` for styling.
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 2. SQL Database Schema
 
-### `npm run build`
+```SQL
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+/*
+Based on the provided payload, it was assumed that every task belongs to a single task group.
+*/
+CREATE TABLE tasks (
+  id INT NOT NULL AUTO_INCREMENT,
+  group_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  completed_at DATETIME,
+  PRIMARY KEY (id),
+  FOREIGN KEY (group_id) REFERENCES task_groups(id)
+);
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+CREATE TABLE task_groups (
+  id INT NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+);
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+/*
+The below table enables a many-to-many relationship of dependency between tasks.
+A single task may have many dependent tasks, and many tasks on which it depends.
+`task_id` refers to the task which has another task dependent on it.
+`dependent_task_id` refers to the task which is dependent on the above task.
+*/
+CREATE TABLE task_dependencies (
+  id INT NOT NULL AUTO_INCREMENT,
+  task_id INT NOT NULL,
+  dependent_task_id INT NOT NULL,
+  PRIMARY KEY (id),
+  FOREIGN KEY (task_id) REFERENCES tasks(id),
+  FOREIGN KEY (dependent_task_id) REFERENCES tasks(id)
+);
+```
 
-### `npm run eject`
+## 3. Check/Uncheck Task API
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### `PATCH` `/tasks/{task_id}`
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+#### URL
+```http://api.wonderschool-tasklist.com/tasks/{task_id}```
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+#### Request Payload Format
+`object`
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+| key | value | description |
+| :- | :- | :- |
+| `completed_at` | `string` or `null` | ISO 8601 string representing the date/time of the task's completion |
+```JSON
+  {
+    "completed_at": "2015-03-01T12:00:00.000Z"
+  }
+```
 
-## Learn More
+#### Response Payload Format
+`object`
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| key | value | description |
+| :- | :- | :- |
+| `id` | `integer` |
+| `group_id` | `integer` | ID of the group to which this task belongs |
+| `title` | `string` | Title of the task |
+| `dependency_ids` | `array` of `integer` | IDs of the tasks on which this task depends |
+| `completed_at` | `string` or `null` | ISO 8601 string representing the date/time of the task's completion |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+```JSON
+  {
+    "id": 8,
+    "group_id": 2,
+    "title": "Have a snack",
+    "dependency_ids": [],
+    "completedAt": null,
+  }
+```
