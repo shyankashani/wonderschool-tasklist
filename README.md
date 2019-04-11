@@ -64,7 +64,6 @@ CREATE TABLE task_dependencies (
 ```http://api.wonderschool-tasklist.com/tasks/{task_id}```
 
 #### Request Payload Format
-`object`
 
 | key | value | description |
 | :- | :- | :- |
@@ -76,7 +75,8 @@ CREATE TABLE task_dependencies (
 ```
 
 #### Response Payload Format
-`object`
+##### `200`
+Success
 
 | key | value | description |
 | :- | :- | :- |
@@ -93,5 +93,35 @@ CREATE TABLE task_dependencies (
     "title": "Have a snack",
     "dependency_ids": [],
     "completedAt": null,
+  }
+```
+
+##### `400`
+Bad request, if, for example, the provided `completed_at` is not in the expected ISO 8601 format.
+
+| key | value | description |
+| :- | :- | :- |
+| `field` | `string` or `null` | Field that created the error |
+| `message` | `string` | Description of the error |
+
+```JSON
+  {    
+    "field": "completed_at",
+    "message": "Provided date is not in the expected ISO 8061 format."
+  }
+```
+
+##### `404`
+Not found, if, for example, the provided `task_id` does not refer to an existing task.
+
+| key | value | description |
+| :- | :- | :- |
+| `field` | `string` or `null` | Field that created the error |
+| `message` | `string` | Description of the error |
+
+```JSON
+  {
+    "field": null,
+    "message": "Task not found."
   }
 ```
